@@ -38,7 +38,10 @@ export const register = async (registerData) => {
             throw new Error(error.message || 'Registration failed');
         }
         
-        return await response.json();
+        const data = await response.json();
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('available_games', JSON.stringify(data.available_games));
+        return data;
     } catch (error) {
         throw error;
     }

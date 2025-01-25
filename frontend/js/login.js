@@ -1,4 +1,4 @@
-// public/js/login.js
+// frontend/js/login.js
 import { login } from './api/auth.js';
 
 document.addEventListener('DOMContentLoaded', () => {
