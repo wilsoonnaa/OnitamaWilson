@@ -1,0 +1,79 @@
+html, body {
+    margin: 0;
+    height: 100%;
+    background-image: url(/frontend/assets/images/background-image.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+/*Variables*/
+:root{
+    --clr-primary: #99005D;
+    --clr-second: #8F095A;
+}
+
+/*Fonts*/
+@font-face {
+    font-family: 'RobotoMono';
+    src: url('/frontend/assets/fonts/roboto-mono/static/RobotoMono-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.container{
+    height: 100%;
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif
+}
+
+.full-center{
+    display: flex;
+    justify-content: center;
+    
+}
+
+.content {
+    margin-top: 150px;
+}
+
+.content form {
+    margin-top: 4rem;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    font-family: 'RobotoMono', Helvetica, sans-serif;
+}
+
+.content form input {
+    margin-bottom: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+    background: none;
+    border: 1px solid var(--clr-primary);
+    border-radius: 20px;
+    font-size: 24px;
+    padding: 5px 20px;
+    color: azure;
+    text-align: center;
+}
+
+.content form button{
+    font-family: 'RobotoMono';
+    margin-top: 2rem;
+    background-color: var(--clr-second);
+    width: 300px;
+    height: 50px;
+    align-self: center;
+    border: none;
+    border-radius: 20px;
+    color: azure;
+    font-size: 32px;
+}
+
+.logo-lrg{
+
+}
+
+.content{
+
+}
