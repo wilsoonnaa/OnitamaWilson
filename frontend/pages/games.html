@@ -3,9 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <link rel="stylesheet" href="../styles/style.css">
+    <title>Games - Onitama</title>
 </head>
 <body>
-    fuck yeah
+    <header>
+        <div class="logo-sml">
+            <img src="../assets/svg/ONITAMALOGO.svg" alt="Onitama">
+        </div>
+        <a href="#" class="logout-link">Log Out</a>
+    </header>
+    <div class="games-container">
+        <div class="games-tutorial">
+            <h1>Правила</h1>
+            <div>
+                На доске 5х5 играют 2 игрока. <br>
+<br>
+У каждого игрока есть 4 пешки и 1 мастер.
+<br><br>
+В начале игры каждому игроку выдается по 2 карты движения.
+<br><br>
+После использования карта движения меняется местами с картой в центре доски.<br><br>
+
+Есть 2 способа победить:<br><br>
+<ul>
+    <li><span style="color: #EB1E1E">Путь камня</span> - захватить мастера противника.</li>
+    <br>
+    <li><span style="color: #3392FF">Путь потока</span> - переместить своего мастера на место храмовой арки противника.</li>
+</ul>
+<br>
+Если у вас есть возможный ход, вы обязаны его сделать!
+            </div>
+        </div>
+        <div class="games-list">
+            <div class="games-title">
+                <a href="#" id="create-games"><img src="../assets/svg/Plus.svg" alt="Create new game"></a>
+                <a href="#" id="refresh-games"><img src="../assets/svg/Refresh.svg" alt="Refresh games button"></a>
+                <h1>Доступные Игры</h1>
+            </div>
+            <div class="games-scroller">
+                <div class="games-scrollheader">
+                    <div class="games-scrollid">
+                        ID
+                    </div>
+                    <div class="games-scrolltype">
+                        Type
+                    </div>
+                    <div class="games-scrollstatus">
+                        Status
+                    </div>
+                    <div class="games-scrolljoin">
+                        Move
+                    </div>
+                </div>
+                <div class="games-scrollbox">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="../js/games.js"></script>
 </body>
 </html>

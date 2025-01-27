@@ -18,3 +18,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// Token verification for index page
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+        try {
+            const response = await fetch('https://se.ifmo.ru/~s341995/api/users/verify-token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    token: token
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'valid') {
+                window.location.href = './pages/games.html';
+                return;
+            }
+            
+            // Clear invalid token
+            localStorage.removeItem('token');
+        } catch (error) {
+            console.error('Token verification error:', error);
+            localStorage.removeItem('token');
+        }
+    }
+});

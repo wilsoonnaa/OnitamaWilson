@@ -1,14 +1,24 @@
 html, body {
     margin: 0;
-    height: 100%;
+    height: 100vh;
     background-image: url(/frontend/assets/images/background-image.png);
     background-repeat: no-repeat;
-    background-size: cover;
+    background-size: fit;
 }
 /*Variables*/
 :root{
     --clr-primary: #99005D;
     --clr-second: #8F095A;
+    --clr-logout: #FF0751;
+    --clr-rock: #EB1E1E;
+    --clr-water: #3392FF;
+    --clr-gamesback: #320026;
+    --clr-waiting: #FF8833;
+    --clr-ongoing: #7EE500;
+    --clr-scrollactive: #5D174C;
+    --clr-scrollclick: #9C207E;
+    --clr-violet: #B17BFF;
+    color: azure;
 }
 
 /*Fonts*/
@@ -19,10 +29,322 @@ html, body {
     font-style: normal;
 }
 
+@font-face {
+    font-family: 'RobotoMono';
+    src: url('/frontend/assets/fonts/roboto-mono/static/RobotoMono-Light.ttf') format('truetype');
+    font-weight: light;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'RobotoMono';
+    src: url('/frontend/assets/fonts/roboto-mono/static/RobotoMono-SemiBold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+header{
+    margin: 0 5rem;
+    height: 15%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    a {
+        font-size: 1.5rem;
+        font-family: 'RobotoMono', Arial, Helvetica, sans-serif;
+        color: var(--clr-logout);
+        text-decoration: none;
+    }
+}
+
+.logo-sml img{
+    max-height: 4rem;
+}
+
 .container{
     height: 100%;
     margin: 0;
     font-family: Arial, Helvetica, sans-serif
+}
+
+.games-container{
+    height: 85%;
+    margin: 0 5rem;
+    font-family: 'RobotoMono',Arial, Helvetica, sans-serif;
+    display: flex;
+    flex-direction: row;
+
+    h1{
+        font-weight: light;
+        color: azure;
+    }
+}
+
+.games-container-2{
+    height: 85%;
+    margin: 0 5rem;
+    font-family: 'RobotoMono',Arial, Helvetica, sans-serif;
+    display: flex;
+    flex-direction: column;
+
+    h1{
+        font-weight: light;
+        color: azure;
+    }
+}
+
+.game-status{
+    
+    width: 40%;
+    height: 3rem;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 0;
+    h1{
+        font-family: 'RobotoMono',Arial, Helvetica, sans-serif;
+        font-weight: lighter;
+        font-size: 40px;
+        margin: 0;
+        padding: 0;
+    }
+}
+
+.game-content {
+    margin-top: 1rem;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+
+    .game-board {
+        width: 40%;
+        min-width: 40%;
+        
+        img {
+            width: 100%;
+        }
+    }
+
+    .game-cards {
+        width: 60%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+
+        .cards-opposite,
+        .cards-player {
+            width: 100%;
+            height: 50%;
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            
+            .card {
+                height: 100%;
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0.5rem;
+                
+                img {
+                    max-height: 100%;
+                    max-width: 100%;
+                    width: auto;
+                    object-fit: contain;
+                }
+            }
+        }
+    }
+}
+
+.game-info{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    
+    .gameid-info{
+        font-size: 20px;
+        display: flex;
+        flex-direction: row;
+        gap: 1.5rem;
+
+        .gameid-status{
+            color: var(--clr-waiting);
+        }
+    }
+}
+
+.games-tutorial{
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+
+    ul{
+        margin: 0;
+        li{
+            margin: 0;
+        }
+    }
+
+    div{
+        width: 90%;
+        color: azure;
+        font-family: 'RobotoMono', Arial, Helvetica, sans-serif;
+        font-weight: light;
+        font-size: 20px;
+    }
+}
+
+.games-title{
+    width: 90%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    img{
+        padding-top: 0.4rem;
+        max-height:  2rem;
+    }
+
+    img:active{
+
+    }
+}
+
+.games-list{
+    width: 50%;
+    height: 100%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+}
+
+.create-game-form{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    margin: 1rem 2rem;
+    font-family: 'RobotoMono',Arial, Helvetica, sans-serif;
+    h2{
+        margin: 0;
+        text-decoration: underline;
+        font-weight: lighter;
+    }
+
+    form{
+        div{
+            margin-top: 1rem;
+            font-size: 20px;
+        }
+        button{
+            margin-top: 1rem;
+            background-color: var(--clr-primary);
+            border: none;
+            font-size: 20px;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            color: azure;
+        }
+
+        button:hover{
+            background-color: var(--clr-scrollclick);
+        }
+
+        button:active{
+            background-color: var(--clr-scrollactive);
+        }
+    }
+}
+
+.games-scroller {
+    height: 80%;
+    width: 90%;
+    border-radius: 20px;
+    background-color: var(--clr-gamesback);
+    border: 1px solid var(--clr-primary);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.games-scrollbox {
+    width: 100%;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.games-scrollbox::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+}
+
+.games-scrollitem {
+    width: 100%;
+    height: 4rem;
+    border-bottom: 1px solid var(--clr-primary);
+    display: flex;
+    flex-direction: row;
+    color: azure;
+    font-family: 'RobotoMono', Arial, Helvetica, sans-serif;
+    font-style: light;
+    font-size: 20px;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.games-scrollitem:hover{
+    background-color: var(--clr-scrollactive);
+}
+
+.games-scrollitem:active{
+    background-color: var(--clr-scrollclick);
+}
+
+.games-scrollheader {
+    width: 100%;
+    min-height: 4rem;
+    background-color: #99005D;
+    border-bottom: 1px solid var(--clr-primary);
+    display: flex;
+    flex-direction: row;
+    color: azure;
+    font-family: 'RobotoMono', Arial, Helvetica, sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.games-scrollid {
+    width: 15%;
+    text-align: center;
+}
+
+.games-scrolltype {
+    width: 25%;
+    text-align: center;
+}
+
+.games-scrollstatus {
+    width: 30%;
+    text-align: center;
+}
+
+.games-scrolljoin {
+    width: 20%;
+    text-align: center;
 }
 
 .full-center{
@@ -33,6 +355,25 @@ html, body {
 
 .content {
     margin-top: 150px;
+    display: flex;
+    flex-direction: column;
+
+    a{
+        font-family: 'RobotoMono', Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        margin-top: 1rem;
+        align-self: center;
+        text-decoration: none;
+        color: azure;
+    }
+
+    a:hover{
+        cursor: pointer;
+    }
+
+    a:active{
+        color:#9C207E;
+    }
 }
 
 .content form {
@@ -68,6 +409,14 @@ html, body {
     border-radius: 20px;
     color: azure;
     font-size: 32px;
+}
+
+.content form button:active{
+    background-color: var(--clr-scrollclick);
+}
+
+button:hover{
+    cursor: pointer;
 }
 
 .logo-lrg{
