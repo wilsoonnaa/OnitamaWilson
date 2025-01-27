@@ -217,6 +217,34 @@ async function verifyToken() {
     }
 }
 
+// Store game information when creating a new game
+function storeGameInfo(data) {
+    // Create a unique key for this game using game_id
+    const storageKey = `game_${data.game_id}`;
+    
+    const gameInfo = {
+        gameId: data.game_id,
+        inviteCode: data.invite_code,
+        playerId: data.player_id,
+        playerColor: data.player_color,
+        status: data.status,
+        timePerMove: data.available_games.find(g => g.game_id === data.game_id)?.time_per_move,
+        createdAt: new Date().toISOString()
+    };
+    
+    // Store this specific game's data under its unique key
+    localStorage.setItem(storageKey, JSON.stringify(gameInfo));
+    
+    return gameInfo;
+}
+
+// Helper function to retrieve a specific game's data
+function getGameInfo(gameId) {
+    const storageKey = `game_${gameId}`;
+    const gameData = localStorage.getItem(storageKey);
+    return gameData ? JSON.parse(gameData) : null;
+}
+
 // Define the form submission handler function before the DOMContentLoaded event
 function handleGameFormSubmit(e) {
     e.preventDefault();
@@ -261,6 +289,8 @@ function handleGameFormSubmit(e) {
     .then(data => {
         console.log('Server response:', data);
         if (data.game_id) {
+            // Store game info before redirecting
+            storeGameInfo(data);
             console.log('Redirecting to:', `game.html?id=${data.game_id}`);
             window.location.href = `game.html?id=${data.game_id}`;
         } else {

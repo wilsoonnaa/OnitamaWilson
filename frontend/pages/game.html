@@ -16,7 +16,7 @@
     <div class="games-container-2">
         <div class="game-status">
             <h1 class="update">Waiting</h1>
-            <h1 class="time"></h1>
+            <h1 class="time">2:00</h1>
         </div>
         <div class="game-content">
             <div class="game-board">
@@ -50,14 +50,101 @@
         <div class="game-info">
             <p>Wait until other player joins...</p>
             <div class="gameid-info">
-                <p class="gameid-status"></p>
-                <p class="gameid-num"></p>
+                <p class="gameid-status">Waiting</p>
+                <p class="gameid-num">#33</p>
                 <div class="gameid-code-container" style="display: none">
-                    <p class="gameid-code"></p>
+                    <p class="gameid-code">ABC123</p>
                 </div>
             </div>
         </div>
     </div>
-    <script type="module" src="../js/game.js"></script>
+    <script>
+        function createBoard(playerColor) {
+            const gameBoard = document.querySelector('.game-board');
+            
+            // Create 5x5 grid
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'board-cell';
+                cell.dataset.row = Math.floor(i / 5);
+                cell.dataset.col = i % 5;
+                gameBoard.appendChild(cell);
+            }
+            
+            // Initial piece setup based on player color
+            setupInitialPieces(playerColor);
+        }
+
+        function setupInitialPieces(playerColor) {
+            const isPlayerBlue = playerColor === 'blue';
+            
+            // Player's pieces (bottom)
+            createPiece(4, 0, playerColor);
+            createPiece(4, 1, playerColor);
+            createPiece(4, 2, playerColor, true); // Master
+            createPiece(4, 3, playerColor);
+            createPiece(4, 4, playerColor);
+            
+            // Opponent's pieces (top)
+            const opponentColor = isPlayerBlue ? 'red' : 'blue';
+            createPiece(0, 0, opponentColor);
+            createPiece(0, 1, opponentColor);
+            createPiece(0, 2, opponentColor, true); // Master
+            createPiece(0, 3, opponentColor);
+            createPiece(0, 4, opponentColor);
+        }
+
+        function createPiece(row, col, color, isMaster = false) {
+            const cell = document.querySelector(`.board-cell[data-row="${row}"][data-col="${col}"]`);
+            const piece = document.createElement('div');
+            piece.className = `piece ${color}${isMaster ? ' master' : ''}`;
+            cell.appendChild(piece);
+        }
+
+        function getGameInfo(gameId) {
+            const storageKey = `game_${gameId}`;
+            const gameData = localStorage.getItem(storageKey);
+            return gameData ? JSON.parse(gameData) : null;
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get game ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const gameId = urlParams.get('id');
+            
+            // Get game info from localStorage
+            const gameInfo = getGameInfo(gameId);
+            
+            if (gameInfo) {
+                // Update game status and ID display
+                document.querySelector('.gameid-status').textContent = gameInfo.status.charAt(0).toUpperCase() + gameInfo.status.slice(1);
+                document.querySelector('.gameid-num').textContent = `#${gameInfo.gameId}`;
+                
+                // Show invite code if it exists
+                if (gameInfo.inviteCode) {
+                    const codeContainer = document.querySelector('.gameid-code-container');
+                    codeContainer.style.display = 'block';
+                    document.querySelector('.gameid-code').textContent = `${gameInfo.inviteCode}`;
+                }
+                
+                // Create board with player's color
+                createBoard(gameInfo.playerColor);
+
+                // Update time display if timePerMove exists
+                if (gameInfo.timePerMove) {
+                    document.querySelector('.time').textContent = formatTime(gameInfo.timePerMove);
+                }
+            } else {
+                console.error('Game information not found');
+                window.location.href = 'games.html';
+            }
+        });
+    </script>
 </body>
 </html>
