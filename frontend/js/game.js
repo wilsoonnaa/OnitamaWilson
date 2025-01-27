@@ -39,6 +39,10 @@ async function fetchGameInfo(gameId, token) {
                 inviteCode: data.invite_code // Assuming invite_code is part of the response
             };
 
+            // Store the game info in local storage under a unique key
+            const storageKey = `game_${gameId}`;
+            localStorage.setItem(storageKey, JSON.stringify(gameInfo));
+
             return gameInfo;
         } else {
             return {
@@ -116,18 +120,9 @@ function updateGameDisplay(gameInfo) {
     }
 
     // Update game status
-    if (gameInfo.winner_id !== null) {
-        const winner = gameInfo.players.find(player => player.player_id === gameInfo.winner_id);
-        if (winner) {
-            document.querySelector('.update').textContent = `${winner.color.charAt(0).toUpperCase() + winner.color.slice(1)} wins!`;
-        } else {
-            document.querySelector('.update').textContent = 'Unknown winner';
-        }
-    } else {
-        document.querySelector('.update').textContent = gameInfo.currentMove ?
-            `${gameInfo.currentMove.color.charAt(0).toUpperCase() + gameInfo.currentMove.color.slice(1)} move` :
-            'Waiting';
-    }
+    document.querySelector('.update').textContent = gameInfo.currentMove ?
+        `${gameInfo.currentMove.color.charAt(0).toUpperCase() + gameInfo.currentMove.color.slice(1)} move` :
+        'Waiting';
 
     // Update game ID
     document.querySelector('.gameid-num').textContent = `#${gameInfo.gameId}`;
@@ -150,18 +145,14 @@ function updateGameDisplay(gameInfo) {
 
     // Update cards display
     if (gameInfo.playerPieces && gameInfo.opponentPieces) {
-        updateCardsDisplay(gameInfo.playerColor);
+        updateCardsDisplay(gameInfo.playerColor, gameInfo.playerCards, gameInfo.opponentCards);
 
         // Update piece positions
         setupInitialPieces(gameInfo.playerColor, gameInfo.playerPieces, gameInfo.opponentPieces);
     }
 }
 
-function updateCardsDisplay(playerColor) {
-    const storedGameInfo = getGameInfo(gameInfo.gameId);
-    const playerCards = storedGameInfo ? storedGameInfo.playerCards : [];
-    const opponentCards = storedGameInfo ? storedGameInfo.opponentCards : [];
-
+function updateCardsDisplay(playerColor, playerCards, opponentCards) {
     const playerCardsContainer = document.querySelector('.cards-player');
     const opponentCardsContainer = document.querySelector('.cards-opposite');
 
@@ -192,19 +183,16 @@ function updateCardsDisplay(playerColor) {
 // Store game information when creating a new game
 function storeGameInfo(data) {
     // Create a unique key for this game using game_id
-    const storageKey = `game_${data.gameId}`;
+    const storageKey = `game_${data.game_id}`;
 
     const gameInfo = {
-        gameId: data.gameId,
-        inviteCode: data.inviteCode,
-        playerId: data.playerId,
-        playerColor: data.playerColor,
+        gameId: data.game_id,
+        inviteCode: data.invite_code,
+        playerId: data.player_id,
+        playerColor: data.player_color,
         status: data.status,
-        timePerMove: data.timePerMove,
-        createdAt: new Date().toISOString(),
-        playerCards: data.playerCards,
-        opponentCards: data.opponentCards,
-        currentMoveColor: data.currentMoveColor
+        timePerMove: data.available_games.find(g => g.game_id === data.game_id)?.time_per_move,
+        createdAt: new Date().toISOString()
     };
 
     // Store this specific game's data under its unique key
