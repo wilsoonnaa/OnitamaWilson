@@ -41,7 +41,19 @@ async function fetchGameInfo(gameId, token) {
 
             // Store the game info in local storage under a unique key
             const storageKey = `game_${gameId}`;
-            localStorage.setItem(storageKey, JSON.stringify(gameInfo));
+            const storedGameInfo = getGameInfo(gameId);
+
+            if (storedGameInfo) {
+                // Merge the new data with the existing data, preserving the invite code
+                const updatedGameInfo = {
+                    ...storedGameInfo,
+                    ...gameInfo,
+                    inviteCode: storedGameInfo.inviteCode || gameInfo.inviteCode
+                };
+                localStorage.setItem(storageKey, JSON.stringify(updatedGameInfo));
+            } else {
+                localStorage.setItem(storageKey, JSON.stringify(gameInfo));
+            }
 
             return gameInfo;
         } else {
