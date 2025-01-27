@@ -6,11 +6,11 @@ let buttonRefreshInterval;
 function loadGames() {
     const gamesScrollbox = document.querySelector('.games-scrollbox');
     const availableGames = JSON.parse(localStorage.getItem('available_games') || '[]');
-    
+
     // Filter and sort games
     const publicGames = availableGames.filter(game => !game.is_private);
     const privateGames = availableGames.filter(game => game.is_private);
-    
+
     // Display public games first
     [...publicGames, ...privateGames].forEach(game => {
         // Format time
@@ -22,14 +22,14 @@ function loadGames() {
         } else {
             timeStr = `0:${game.time_per_move.toString().padStart(2, '0')}`;
         }
-        
+
         const gameItem = document.createElement('div');
         gameItem.className = 'games-scrollitem';
-        
+
         // Add specific class for styling based on game type and status
         gameItem.classList.add(game.is_private ? 'private-game' : 'public-game');
         gameItem.classList.add(game.status);
-        
+
         gameItem.innerHTML = `
             <div class="games-scrollid">
                 #${game.game_id}
@@ -44,7 +44,7 @@ function loadGames() {
                 ${timeStr}
             </div>
         `;
-        
+
         gamesScrollbox.appendChild(gameItem);
     });
 
@@ -53,7 +53,7 @@ function loadGames() {
     gameItems.forEach(item => {
         const statusDiv = item.querySelector('.games-scrollstatus');
         const status = statusDiv.textContent.trim().toLowerCase();
-        
+
         if (status === 'waiting') {
             statusDiv.style.color = 'var(--clr-waiting)';
         } else if (status === 'ongoing') {
@@ -88,16 +88,16 @@ async function fetchAndUpdateGames() {
 
         const data = await response.json();
         console.log('API Response:', data);
-        
+
         // Store the games in localStorage - updated to use correct property
         localStorage.setItem('available_games', JSON.stringify(data.available_games || []));
-        
+
         // Clear existing games display
         const gamesScrollbox = document.querySelector('.games-scrollbox');
         if (gamesScrollbox) {
             gamesScrollbox.innerHTML = '';
         }
-        
+
         // Load the updated games
         loadGames();
     } catch (error) {
@@ -117,10 +117,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             fetchAndUpdateGames();
         });
     }
-    
+
     // Initial fetch and load
     await fetchAndUpdateGames();
-    
+
     // Set up periodic refresh
     autoRefreshInterval = setInterval(fetchAndUpdateGames, 5000);
 });
@@ -179,14 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', async () => {
     // Initial verification
     await verifyToken();
-    
+
     // Set up periodic verification
     setInterval(verifyToken, 5000); // Check every minute
 });
 
 async function verifyToken() {
     const token = localStorage.getItem('token');
-    
+
     if (!token) {
         window.location.href = '../index.html';
         return;
@@ -202,9 +202,9 @@ async function verifyToken() {
                 token: token
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.status !== 'valid') {
             localStorage.removeItem('token');
             window.location.href = '../index.html';
@@ -221,7 +221,7 @@ async function verifyToken() {
 function storeGameInfo(data) {
     // Create a unique key for this game using game_id
     const storageKey = `game_${data.game_id}`;
-    
+
     const gameInfo = {
         gameId: data.game_id,
         inviteCode: data.invite_code,
@@ -231,10 +231,10 @@ function storeGameInfo(data) {
         timePerMove: data.available_games.find(g => g.game_id === data.game_id)?.time_per_move,
         createdAt: new Date().toISOString()
     };
-    
+
     // Store this specific game's data under its unique key
     localStorage.setItem(storageKey, JSON.stringify(gameInfo));
-    
+
     return gameInfo;
 }
 
@@ -248,7 +248,7 @@ function getGameInfo(gameId) {
 // Define the form submission handler function before the DOMContentLoaded event
 function handleGameFormSubmit(e) {
     e.preventDefault();
-    
+
     const is_private = document.getElementById('isPrivate').checked;
     const timePerMove = document.getElementById('timePerMove').value.toString();
     const token = localStorage.getItem('token');
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     createGamesLink.addEventListener('click', (e) => {
         e.preventDefault();
-        
+
         // Clear both intervals
         if (autoRefreshInterval) {
             clearInterval(autoRefreshInterval);
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (buttonRefreshInterval) {
             clearInterval(buttonRefreshInterval);
         }
-        
+
         gamesScrollbox.innerHTML = `
             <div class="create-game-form">
                 <h2>Create Game</h2>
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="form-group">
                         <label for="timePerMove">Time per move (seconds):</label>
-                        <input type="number" id="timePerMove" name="timePerMove" 
+                        <input type="number" id="timePerMove" name="timePerMove"
                                min="30" max="1000" value="120" required>
                     </div>
                     <button type="submit" class="submit-btn">Create Game</button>
@@ -356,14 +356,14 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshGamesLink.addEventListener('click', (e) => {
         e.preventDefault();
         const createGameForm = gamesScrollbox.querySelector('.create-game-form');
-        
+
         if (createGameForm) {
             gamesScrollbox.innerHTML = '';
-            
+
             if (!buttonRefreshInterval) {
                 buttonRefreshInterval = setInterval(fetchAndUpdateGames, 5000);
             }
-            
+
             fetchAndUpdateGames().catch(error => {
                 console.error('Failed to fetch games:', error);
                 gamesScrollbox.innerHTML = '<p class="error">Failed to load games. Please try again.</p>';
@@ -371,6 +371,72 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Function to handle joining a game
+async function handleJoinGameSubmit(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const gameId = form.getAttribute('data-game-id');
+    const isPrivate = form.getAttribute('data-is-private') === 'true';
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        alert('Please log in first');
+        return;
+    }
+
+    const requestBody = {
+        token: token,
+        game_id: gameId
+    };
+
+    if (isPrivate) {
+        const inviteCode = document.getElementById('inviteCode').value.trim();
+        if (!inviteCode) {
+            alert('Invite code is required for private games');
+            return;
+        }
+        requestBody.invite_code = inviteCode;
+    }
+
+    // Disable form while submitting
+    const submitButton = form.querySelector('.submit-btn');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Joining...';
+
+    try {
+        const response = await fetch(`https://se.ifmo.ru/~s341995/api/games/${gameId}/join`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Join game response:', data); // Log the response data
+
+        if (data.querying_player && data.querying_player.player_id) {
+            // Redirect to the game page
+            console.log('Redirecting to:', `game.html?id=${gameId}`);
+            window.location.href = `game.html?id=${gameId}`;
+        } else {
+            throw new Error(data.message || 'Failed to join game');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'Failed to join game. Please try again.');
+    } finally {
+        // Re-enable form
+        submitButton.disabled = false;
+        submitButton.textContent = 'Join Game';
+    }
+}
 
 // Add click handler for game items
 document.addEventListener('click', (e) => {
@@ -388,7 +454,7 @@ document.addEventListener('click', (e) => {
         // Extract game ID from the games-scrollid div
         const gameIdElement = gameItem.querySelector('.games-scrollid');
         const gameId = gameIdElement ? gameIdElement.textContent.trim().replace('#', '') : null;
-        
+
         // Check if it's a public or private game
         const isPrivate = !gameItem.classList.contains('public-game');
         const gamesScrollbox = document.querySelector('.games-scrollbox');
@@ -414,5 +480,8 @@ document.addEventListener('click', (e) => {
         if (form) {
             form.addEventListener('submit', handleJoinGameSubmit);
         }
+
+        // Debugging: Log the form HTML to ensure it's being appended correctly
+        console.log('Join Game Form HTML:', gamesScrollbox.innerHTML);
     }
 });
