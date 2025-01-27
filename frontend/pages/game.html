@@ -20,31 +20,11 @@
         </div>
         <div class="game-content">
             <div class="game-board">
-                
+
             </div>
             <div class="game-cards">
-                <div class="cards-opposite">
-                    <div class="card">
-                        <img src="../assets/svg/cards/Boar.svg" alt="Card">
-                    </div>
-                    <div class="card">
-                        <img src="../assets/svg/cards/Boar.svg" alt="Card">
-                    </div>
-                    <div class="card">
-                        <img src="../assets/svg/cards/Boar.svg" alt="Card">
-                    </div>
-                </div>
-                <div class="cards-player">
-                    <div class="card">
-                        <img src="../assets/svg/cards/Boar.svg" alt="Card">
-                    </div>
-                    <div class="card">
-                        <img src="../assets/svg/cards/Boar.svg" alt="Card">
-                    </div>
-                    <div class="card">
-                        <img src="../assets/svg/cards/Boar.svg" alt="Card">
-                    </div>
-                </div>
+                <div class="cards-opposite"></div>
+                <div class="cards-player"></div>
             </div>
         </div>
         <div class="game-info">
@@ -52,8 +32,8 @@
             <div class="gameid-info">
                 <p class="gameid-status">Waiting</p>
                 <p class="gameid-num">#33</p>
-                <div class="gameid-code-container" style="display: none">
-                    <p class="gameid-code">ABC123</p>
+                <div class="gameid-code-container">
+                    <p class="gameid-code">Invite Code: </p>
                 </div>
             </div>
         </div>
@@ -78,22 +58,37 @@
                 }
 
                 const data = await response.json();
-                
-                // Store game information
-                const gameInfo = {
-                    gameId: gameId,
-                    playerId: data.querying_player.player_id,
-                    playerColor: data.querying_player.color,
-                    status: data.status,
-                    remainingTime: data.remaining_time,
-                    currentMove: data.current_move
-                };
 
-                // Store in localStorage
-                const storageKey = `game_${gameId}`;
-                localStorage.setItem(storageKey, JSON.stringify(gameInfo));
-                
-                return gameInfo;
+                // Only fetch card and position information if the game status is "ongoing" or "finished"
+                if (data.status === 'ongoing' || data.status === 'finished') {
+                    // Store game information with cards
+                    const playerData = data.players.find(p => p.player_id === data.querying_player.player_id);
+                    const opponentData = data.players.find(p => p.player_id !== data.querying_player.player_id);
+
+                    // Store cards in localStorage
+                    localStorage.setItem('playerCards', JSON.stringify(playerData?.cards || []));
+                    localStorage.setItem('opponentCards', JSON.stringify(opponentData?.cards || []));
+
+                    const gameInfo = {
+                        gameId: gameId,
+                        playerId: data.querying_player.player_id,
+                        playerColor: data.querying_player.color,
+                        status: data.status,
+                        remainingTime: data.remaining_time,
+                        currentMove: data.current_move,
+                        playerPieces: playerData.pieces,
+                        opponentPieces: opponentData.pieces
+                    };
+
+                    return gameInfo;
+                } else {
+                    return {
+                        gameId: gameId,
+                        status: data.status,
+                        remainingTime: data.remaining_time,
+                        currentMove: data.current_move
+                    };
+                }
             } catch (error) {
                 alert(`Error fetching game info: ${error.message}`);
                 return null;
@@ -101,45 +96,61 @@
         }
 
         function createBoard(playerColor) {
-            const gameBoard = document.querySelector('.game-board');
-            
-            // Create 5x5 grid
-            for (let i = 0; i < 25; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'board-cell';
-                cell.dataset.row = Math.floor(i / 5);
-                cell.dataset.col = i % 5;
-                gameBoard.appendChild(cell);
-            }
-            
-            // Initial piece setup based on player color
-            setupInitialPieces(playerColor);
-        }
+    const gameBoard = document.querySelector('.game-board');
+    gameBoard.innerHTML = ''; // Clear any existing cells
 
-        function setupInitialPieces(playerColor) {
-            const isPlayerBlue = playerColor === 'blue';
-            
-            // Player's pieces (bottom)
-            createPiece(4, 0, playerColor);
-            createPiece(4, 1, playerColor);
-            createPiece(4, 2, playerColor, true); // Master
-            createPiece(4, 3, playerColor);
-            createPiece(4, 4, playerColor);
-            
-            // Opponent's pieces (top)
-            const opponentColor = isPlayerBlue ? 'red' : 'blue';
-            createPiece(0, 0, opponentColor);
-            createPiece(0, 1, opponentColor);
-            createPiece(0, 2, opponentColor, true); // Master
-            createPiece(0, 3, opponentColor);
-            createPiece(0, 4, opponentColor);
+    // Create 5x5 grid
+    for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 5; col++) {
+            const cell = document.createElement('div');
+            cell.className = 'board-cell';
+            if (playerColor === 'blue') {
+                // Blue player: bottom row is 4, rightmost column is 0
+                cell.dataset.row = row; // Row 0 becomes 4, Row 1 becomes 3, ..., Row 4 becomes 0
+                cell.dataset.col = 4-col;      // Column remains the same (0 to 4)
+            } else {
+                // Red player: bottom row is 0, rightmost column is 4
+                cell.dataset.row = 4-row;      // Row remains the same (0 to 4)
+                cell.dataset.col = col;      // Column remains the same (0 to 4)
+            }
+            gameBoard.appendChild(cell);
         }
+    }
+}
+
+
+
+function setupInitialPieces(playerColor, playerPieces, opponentPieces) {
+    clearBoard();
+
+    // Place player's pieces
+    playerPieces.forEach(piece => {
+        const row = piece.y; // Use the original row coordinate
+        const col = piece.x; // Use the original column coordinate
+        createPiece(row, col, playerColor, piece.type === 'master');
+    });
+
+    // Place opponent's pieces
+    opponentPieces.forEach(piece => {
+        const row = piece.y; // Use the original row coordinate
+        const col = piece.x; // Use the original column coordinate
+        createPiece(row, col, playerColor === 'blue' ? 'red' : 'blue', piece.type === 'master');
+    });
+}
+
 
         function createPiece(row, col, color, isMaster = false) {
             const cell = document.querySelector(`.board-cell[data-row="${row}"][data-col="${col}"]`);
             const piece = document.createElement('div');
             piece.className = `piece ${color}${isMaster ? ' master' : ''}`;
             cell.appendChild(piece);
+        }
+
+        function clearBoard() {
+            const cells = document.querySelectorAll('.board-cell');
+            cells.forEach(cell => {
+                cell.innerHTML = '';
+            });
         }
 
         function updateGameDisplay(gameInfo) {
@@ -149,28 +160,101 @@
             }
 
             // Update game status
-            document.querySelector('.update').textContent = gameInfo.currentMove ? 
-                `${gameInfo.currentMove.color.charAt(0).toUpperCase() + gameInfo.currentMove.color.slice(1)} move` : 
+            document.querySelector('.update').textContent = gameInfo.currentMove ?
+                `${gameInfo.currentMove.color.charAt(0).toUpperCase() + gameInfo.currentMove.color.slice(1)} move` :
                 'Waiting';
 
             // Update game ID
             document.querySelector('.gameid-num').textContent = `#${gameInfo.gameId}`;
 
             // Update game status
-            document.querySelector('.gameid-status').textContent = 
+            document.querySelector('.gameid-status').textContent =
                 gameInfo.status.charAt(0).toUpperCase() + gameInfo.status.slice(1);
 
             // Update timer
             const minutes = Math.floor(gameInfo.remainingTime / 60);
             const seconds = gameInfo.remainingTime % 60;
-            document.querySelector('.time').textContent = 
+            document.querySelector('.time').textContent =
                 `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            // Update invite code display
+            const storedGameInfo = getGameInfo(gameInfo.gameId);
+            const inviteCode = storedGameInfo ? storedGameInfo.inviteCode : 'N/A';
+            document.querySelector('.gameid-code').textContent = `Invite Code: ${inviteCode}`;
+            document.querySelector('.gameid-code-container').style.display = 'block';
+
+            // Update cards display
+            if (gameInfo.playerPieces && gameInfo.opponentPieces) {
+                updateCardsDisplay(gameInfo.playerColor);
+
+                // Update piece positions
+                setupInitialPieces(gameInfo.playerColor, gameInfo.playerPieces, gameInfo.opponentPieces);
+            }
+        }
+
+        function updateCardsDisplay(playerColor) {
+            const playerCards = JSON.parse(localStorage.getItem('playerCards')) || [];
+            const opponentCards = JSON.parse(localStorage.getItem('opponentCards')) || [];
+
+            const playerCardsContainer = document.querySelector('.cards-player');
+            const opponentCardsContainer = document.querySelector('.cards-opposite');
+
+            playerCardsContainer.innerHTML = '';
+            opponentCardsContainer.innerHTML = '';
+
+            playerCards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = `card ${card.active ? 'active' : 'inactive'} ${playerColor}`;
+                const imgElement = document.createElement('img');
+                imgElement.src = `../assets/svg/cards/${card.card_name}.svg`;
+                imgElement.alt = card.card_name;
+                cardElement.appendChild(imgElement);
+                playerCardsContainer.appendChild(cardElement);
+            });
+
+            opponentCards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = `card ${card.active ? 'active' : 'inactive'} ${playerColor === 'blue' ? 'red' : 'blue'}`;
+                const imgElement = document.createElement('img');
+                imgElement.src = `../assets/svg/cards/${card.card_name}.svg`;
+                imgElement.alt = card.card_name;
+                cardElement.appendChild(imgElement);
+                opponentCardsContainer.appendChild(cardElement);
+            });
+        }
+
+        // Store game information when creating a new game
+        function storeGameInfo(data) {
+            // Create a unique key for this game using game_id
+            const storageKey = `game_${data.game_id}`;
+
+            const gameInfo = {
+                gameId: data.game_id,
+                inviteCode: data.invite_code,
+                playerId: data.player_id,
+                playerColor: data.player_color,
+                status: data.status,
+                timePerMove: data.available_games.find(g => g.game_id === data.game_id)?.time_per_move,
+                createdAt: new Date().toISOString()
+            };
+
+            // Store this specific game's data under its unique key
+            localStorage.setItem(storageKey, JSON.stringify(gameInfo));
+
+            return gameInfo;
+        }
+
+        // Helper function to retrieve a specific game's data
+        function getGameInfo(gameId) {
+            const storageKey = `game_${gameId}`;
+            const gameData = localStorage.getItem(storageKey);
+            return gameData ? JSON.parse(gameData) : null;
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const gameId = urlParams.get('id');
-            
+
             if (!gameId) {
                 alert('Error: No game ID provided');
                 return;

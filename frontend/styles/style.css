@@ -200,6 +200,30 @@ header{
             justify-content: space-evenly;
             align-items: center;
             
+            .card.inactive {
+                img{
+                    border: 3px solid greenyellow;
+                    border-radius: 10px;
+                }
+                
+            }
+
+            .card.active.blue {
+                img{
+                    border: 3px solid var(--clr-water);
+                    border-radius: 10px;
+                }
+            }
+            
+            .card.active.red {
+                img{
+                    border: 3px solid var(--clr-logout);
+                    border-radius: 10px;
+                }
+            }
+            
+            
+            
             .card {
                 height: 100%;
                 flex: 1;
