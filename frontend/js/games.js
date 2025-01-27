@@ -1,3 +1,7 @@
+// Store both intervals
+let autoRefreshInterval;
+let buttonRefreshInterval;
+
 // Function to load and display games
 function loadGames() {
     const gamesScrollbox = document.querySelector('.games-scrollbox');
@@ -105,9 +109,6 @@ async function fetchAndUpdateGames() {
     }
 }
 
-// Set up automatic refresh
-let refreshInterval;
-
 document.addEventListener('DOMContentLoaded', async () => {
     const refreshButton = document.getElementById('refresh-games');
     if (refreshButton) {
@@ -121,13 +122,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     await fetchAndUpdateGames();
     
     // Set up periodic refresh
-    refreshInterval = setInterval(fetchAndUpdateGames, 5000);
+    autoRefreshInterval = setInterval(fetchAndUpdateGames, 5000);
 });
 
 // Clean up interval when leaving the page
 window.addEventListener('beforeunload', () => {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    if (buttonRefreshInterval) {
+        clearInterval(buttonRefreshInterval);
     }
 });
 
@@ -212,3 +216,173 @@ async function verifyToken() {
         window.location.href = '../index.html';
     }
 }
+
+// Define the form submission handler function before the DOMContentLoaded event
+function handleGameFormSubmit(e) {
+    e.preventDefault();
+    
+    const is_private = document.getElementById('isPrivate').checked;
+    const timePerMove = document.getElementById('timePerMove').value.toString();
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        alert('Please log in first');
+        return;
+    }
+
+    // Validate time
+    if (!timePerMove || parseInt(timePerMove) < 30 || parseInt(timePerMove) > 1000) {
+        alert('Time per move must be between 30 and 1000 seconds');
+        return;
+    }
+
+    // Disable form while submitting
+    const submitButton = document.querySelector('.submit-btn');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Creating...';
+
+    fetch('https://se.ifmo.ru/~s341995/api/games/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            token: token,
+            is_private: is_private,
+            time: timePerMove
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Server response:', data);
+        if (data.game_id) {
+            console.log('Redirecting to:', `game.html?id=${data.game_id}`);
+            window.location.href = `game.html?id=${data.game_id}`;
+        } else {
+            throw new Error(data.message || 'Failed to create game');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message || 'Failed to create game. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable form
+        submitButton.disabled = false;
+        submitButton.textContent = 'Create Game';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createGamesLink = document.getElementById('create-games');
+    const refreshGamesLink = document.getElementById('refresh-games');
+    const gamesScrollbox = document.querySelector('.games-scrollbox');
+
+    if (!createGamesLink || !refreshGamesLink || !gamesScrollbox) {
+        console.error('Required elements not found');
+        return;
+    }
+
+    createGamesLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Clear both intervals
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+        }
+        if (buttonRefreshInterval) {
+            clearInterval(buttonRefreshInterval);
+        }
+        
+        gamesScrollbox.innerHTML = `
+            <div class="create-game-form">
+                <h2>Create Game</h2>
+                <form id="createGameForm" class="game-form">
+                    <div class="form-group">
+                        <label for="isPrivate">Private Game:</label>
+                        <input type="checkbox" id="isPrivate" name="isPrivate">
+                    </div>
+                    <div class="form-group">
+                        <label for="timePerMove">Time per move (seconds):</label>
+                        <input type="number" id="timePerMove" name="timePerMove" 
+                               min="30" max="1000" value="120" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Create Game</button>
+                </form>
+            </div>
+        `;
+
+        const form = document.getElementById('createGameForm');
+        if (form) {
+            form.addEventListener('submit', handleGameFormSubmit);
+        }
+    });
+
+    refreshGamesLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const createGameForm = gamesScrollbox.querySelector('.create-game-form');
+        
+        if (createGameForm) {
+            gamesScrollbox.innerHTML = '';
+            
+            if (!buttonRefreshInterval) {
+                buttonRefreshInterval = setInterval(fetchAndUpdateGames, 5000);
+            }
+            
+            fetchAndUpdateGames().catch(error => {
+                console.error('Failed to fetch games:', error);
+                gamesScrollbox.innerHTML = '<p class="error">Failed to load games. Please try again.</p>';
+            });
+        }
+    });
+});
+
+// Add click handler for game items
+document.addEventListener('click', (e) => {
+    // Find the closest parent with games-scrollitem class
+    const gameItem = e.target.closest('.games-scrollitem');
+    if (gameItem) {
+        // Stop both refresh intervals while form is shown
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+        }
+        if (buttonRefreshInterval) {
+            clearInterval(buttonRefreshInterval);
+        }
+
+        // Extract game ID from the games-scrollid div
+        const gameIdElement = gameItem.querySelector('.games-scrollid');
+        const gameId = gameIdElement ? gameIdElement.textContent.trim().replace('#', '') : null;
+        
+        // Check if it's a public or private game
+        const isPrivate = !gameItem.classList.contains('public-game');
+        const gamesScrollbox = document.querySelector('.games-scrollbox');
+
+        // Clear current content and show join form
+        gamesScrollbox.innerHTML = `
+            <div class="join-game-form">
+                <h2>Join Game #${gameId}</h2>
+                <form id="joinGameForm" class="game-form" data-game-id="${gameId}" data-is-private="${isPrivate}">
+                    ${isPrivate ? `
+                        <div class="form-group">
+                            <label for="inviteCode">Invite Code:</label>
+                            <input type="text" id="inviteCode" name="inviteCode" required>
+                        </div>
+                    ` : ''}
+                    <button type="submit" class="submit-btn">Join Game</button>
+                </form>
+            </div>
+        `;
+
+        // Set up the form submission handler
+        const form = document.getElementById('joinGameForm');
+        if (form) {
+            form.addEventListener('submit', handleJoinGameSubmit);
+        }
+    }
+});
