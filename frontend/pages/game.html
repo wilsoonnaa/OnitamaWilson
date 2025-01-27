@@ -59,6 +59,47 @@
         </div>
     </div>
     <script>
+        async function fetchGameInfo(gameId, token) {
+            try {
+                const response = await fetch(`https://se.ifmo.ru/~s341995/api/games/${gameId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: token,
+                        game_id: gameId
+                    })
+                });
+
+                if (!response.ok) {
+                    alert(`HTTP error! status: ${response.status}`);
+                    return null;
+                }
+
+                const data = await response.json();
+                
+                // Store game information
+                const gameInfo = {
+                    gameId: gameId,
+                    playerId: data.querying_player.player_id,
+                    playerColor: data.querying_player.color,
+                    status: data.status,
+                    remainingTime: data.remaining_time,
+                    currentMove: data.current_move
+                };
+
+                // Store in localStorage
+                const storageKey = `game_${gameId}`;
+                localStorage.setItem(storageKey, JSON.stringify(gameInfo));
+                
+                return gameInfo;
+            } catch (error) {
+                alert(`Error fetching game info: ${error.message}`);
+                return null;
+            }
+        }
+
         function createBoard(playerColor) {
             const gameBoard = document.querySelector('.game-board');
             
@@ -101,48 +142,59 @@
             cell.appendChild(piece);
         }
 
-        function getGameInfo(gameId) {
-            const storageKey = `game_${gameId}`;
-            const gameData = localStorage.getItem(storageKey);
-            return gameData ? JSON.parse(gameData) : null;
+        function updateGameDisplay(gameInfo) {
+            if (!gameInfo) {
+                alert('Error: Invalid game info');
+                return;
+            }
+
+            // Update game status
+            document.querySelector('.update').textContent = gameInfo.currentMove ? 
+                `${gameInfo.currentMove.color.charAt(0).toUpperCase() + gameInfo.currentMove.color.slice(1)} move` : 
+                'Waiting';
+
+            // Update game ID
+            document.querySelector('.gameid-num').textContent = `#${gameInfo.gameId}`;
+
+            // Update game status
+            document.querySelector('.gameid-status').textContent = 
+                gameInfo.status.charAt(0).toUpperCase() + gameInfo.status.slice(1);
+
+            // Update timer
+            const minutes = Math.floor(gameInfo.remainingTime / 60);
+            const seconds = gameInfo.remainingTime % 60;
+            document.querySelector('.time').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
 
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Get game ID from URL
+        document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const gameId = urlParams.get('id');
             
-            // Get game info from localStorage
-            const gameInfo = getGameInfo(gameId);
-            
-            if (gameInfo) {
-                // Update game status and ID display
-                document.querySelector('.gameid-status').textContent = gameInfo.status.charAt(0).toUpperCase() + gameInfo.status.slice(1);
-                document.querySelector('.gameid-num').textContent = `#${gameInfo.gameId}`;
-                
-                // Show invite code if it exists
-                if (gameInfo.inviteCode) {
-                    const codeContainer = document.querySelector('.gameid-code-container');
-                    codeContainer.style.display = 'block';
-                    document.querySelector('.gameid-code').textContent = `${gameInfo.inviteCode}`;
-                }
-                
-                // Create board with player's color
-                createBoard(gameInfo.playerColor);
+            if (!gameId) {
+                alert('Error: No game ID provided');
+                return;
+            }
 
-                // Update time display if timePerMove exists
-                if (gameInfo.timePerMove) {
-                    document.querySelector('.time').textContent = formatTime(gameInfo.timePerMove);
-                }
-            } else {
-                console.error('Game information not found');
-                window.location.href = 'games.html';
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Error: No authentication token found');
+                return;
+            }
+
+            // Fetch initial game state
+            const gameInfo = await fetchGameInfo(gameId, token);
+            if (gameInfo) {
+                createBoard(gameInfo.playerColor);
+                updateGameDisplay(gameInfo);
+
+                // Set up periodic refresh
+                setInterval(async () => {
+                    const updatedInfo = await fetchGameInfo(gameId, token);
+                    if (updatedInfo) {
+                        updateGameDisplay(updatedInfo);
+                    }
+                }, 5000); // Refresh every 5 seconds
             }
         });
     </script>
