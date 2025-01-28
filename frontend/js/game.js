@@ -136,6 +136,18 @@ function createBoard(playerColor) {
             gameBoard.appendChild(cell);
         }
     }
+
+    // Find and style the throne cells
+    const redThroneCell = document.querySelector('.board-cell[data-row="0"][data-col="2"]');
+    const blueThroneCell = document.querySelector('.board-cell[data-row="4"][data-col="2"]');
+
+    if (redThroneCell) {
+        redThroneCell.classList.add('master-red');
+    }
+
+    if (blueThroneCell) {
+        blueThroneCell.classList.add('master-blue');
+    }
 }
 
 function setupInitialPieces(playerColor, playerPieces, opponentPieces) {
@@ -450,9 +462,11 @@ async function makeMove(fromCell, toCell, card) {
             //updateGameDisplay(data);
         } else {
             console.error('Move failed:', data.message);
+            clearSelections();
             //alert('Failed to make move: ' + data.message);
         }
     } catch (error) {
+        clearSelections();
         console.error('Error making move:', error);
         //alert('Error making move. Please try again.');
     }
@@ -558,6 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (cell.classList.contains('possible-move')) {
                     //alert('Making move from (' + selectedPieceCell.dataset.row + ',' + selectedPieceCell.dataset.col + ') to (' + cell.dataset.row + ',' + cell.dataset.col + ')');
                     makeMove(selectedPieceCell, cell, selectedCard);
+                    clearSelections();
                 }
                 return;
             }

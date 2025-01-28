@@ -158,6 +158,7 @@ function handleLogout() {
         localStorage.removeItem('token');
         window.location.href = '../index.html';
     });
+    localStorage.clear();
 }
 
 // Add logout listener
