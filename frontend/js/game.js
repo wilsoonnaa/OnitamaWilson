@@ -336,7 +336,7 @@ const moveDeltas = {
     'Ox': [{dx: 0, dy: 1}, {dx: 1, dy: 0}, {dx: 0, dy: -1}],
     'Crane': [{dx: 0, dy: 1}, {dx: -1, dy: -1}, {dx: 1, dy: -1}],
     'Boar': [{dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 1, dy: 0}],
-    'Eel': [{dx: -1, dy: 1}, {dx: -1, dy: 0}, {dx: 1, dy: -1}],
+    'Eel': [{dx: -1, dy: 1}, {dx: 1, dy: 0}, {dx: -1, dy: -1}],
     'Cobra': [{dx: 1, dy: 1}, {dx: -1, dy: 0}, {dx: 1, dy: -1}]
 };
 
