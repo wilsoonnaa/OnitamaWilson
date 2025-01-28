@@ -121,7 +121,16 @@ header{
     background-color: var(--clr-gamesback);
 }
 
-.board-cell:active{
+.board-cell.possible-move:hover {
+    background-color: var(--clr-gamesback);
+}
+
+.possible-move {
+    background-color: var(--clr-gamesback);
+    cursor: pointer;
+}
+
+.board-cell.active {
     border-color: var(--clr-violet);
 }
 
@@ -208,6 +217,20 @@ header{
                 
             }
 
+            .card {
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+            
+            .card.active:hover {
+                transform: translateY(-5px);
+            }
+            
+            .card.selected img {
+                box-shadow: 0 0 10px var(--clr-violet);
+                transform: scale(1.05);
+            }
+
             .card.active.blue {
                 img{
                     border: 3px solid var(--clr-water);
@@ -220,6 +243,16 @@ header{
                     border: 3px solid var(--clr-logout);
                     border-radius: 10px;
                 }
+            }
+
+            .card.active.blue.selected img {
+                border: 3px solid azure;
+                border-radius: 10px;
+            }
+            
+            .card.active.red.selected img {
+                border: 3px solid azure;
+                border-radius: 10px;
             }
             
             

@@ -1,4 +1,3 @@
-// Store both intervals
 let autoRefreshInterval;
 let buttonRefreshInterval;
 
@@ -6,7 +5,6 @@ let buttonRefreshInterval;
 function loadGames() {
     const gamesScrollbox = document.querySelector('.games-scrollbox');
     const availableGames = JSON.parse(localStorage.getItem('available_games') || '[]');
-
     // Filter and sort games
     const publicGames = availableGames.filter(game => !game.is_private);
     const privateGames = availableGames.filter(game => game.is_private);
@@ -25,7 +23,6 @@ function loadGames() {
 
         const gameItem = document.createElement('div');
         gameItem.className = 'games-scrollitem';
-
         // Add specific class for styling based on game type and status
         gameItem.classList.add(game.is_private ? 'private-game' : 'public-game');
         gameItem.classList.add(game.status);
@@ -53,7 +50,6 @@ function loadGames() {
     gameItems.forEach(item => {
         const statusDiv = item.querySelector('.games-scrollstatus');
         const status = statusDiv.textContent.trim().toLowerCase();
-
         if (status === 'waiting') {
             statusDiv.style.color = 'var(--clr-waiting)';
         } else if (status === 'ongoing') {
@@ -221,7 +217,6 @@ async function verifyToken() {
 function storeGameInfo(data) {
     // Create a unique key for this game using game_id
     const storageKey = `game_${data.game_id}`;
-
     const gameInfo = {
         gameId: data.game_id,
         inviteCode: data.invite_code,
@@ -458,6 +453,17 @@ document.addEventListener('click', (e) => {
         // Check if it's a public or private game
         const isPrivate = !gameItem.classList.contains('public-game');
         const gamesScrollbox = document.querySelector('.games-scrollbox');
+
+        // Check if the game status is "ongoing"
+        const statusElement = gameItem.querySelector('.games-scrollstatus');
+        const status = statusElement ? statusElement.textContent.trim().toLowerCase() : null;
+
+        if (status === 'ongoing') {
+            // Redirect to the game page
+            console.log('Redirecting to:', `game.html?id=${gameId}`);
+            window.location.href = `game.html?id=${gameId}`;
+            return;
+        }
 
         // Clear current content and show join form
         gamesScrollbox.innerHTML = `

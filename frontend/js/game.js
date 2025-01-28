@@ -1,3 +1,45 @@
+// Token verification for games page
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initial verification
+    await verifyToken();
+
+    // Set up periodic verification
+    setInterval(verifyToken, 5000); // Check every minute
+});
+
+async function verifyToken() {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        window.location.href = '../index.html';
+        return;
+    }
+
+    try {
+        const response = await fetch('https://se.ifmo.ru/~s341995/api/users/verify-token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                token: token
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.status !== 'valid') {
+            localStorage.removeItem('token');
+            window.location.href = '../index.html';
+            return;
+        }
+    } catch (error) {
+        console.error('Token verification error:', error);
+        localStorage.removeItem('token');
+        window.location.href = '../index.html';
+    }
+}
+
 async function fetchGameInfo(gameId, token) {
     try {
         const response = await fetch(`https://se.ifmo.ru/~s341995/api/games/${gameId}`, {
@@ -36,7 +78,8 @@ async function fetchGameInfo(gameId, token) {
                 playerCards: playerData.cards,
                 opponentCards: opponentData.cards,
                 currentMoveColor: data.current_move ? data.current_move.color : null,
-                inviteCode: data.invite_code // Assuming invite_code is part of the response
+                inviteCode: data.invite_code, // Assuming invite_code is part of the response
+                winnerId: data.winner_id || null // Store winner_id if it exists
             };
 
             // Store the game info in local storage under a unique key
@@ -61,11 +104,13 @@ async function fetchGameInfo(gameId, token) {
                 gameId: gameId,
                 status: data.status,
                 remainingTime: data.remaining_time,
-                currentMove: data.current_move
+                currentMove: data.current_move,
+                winnerId: data.winner_id || null
             };
         }
     } catch (error) {
         alert(`Error fetching game info: ${error.message}`);
+        window.location.href = './games.html';
         return null;
     }
 }
@@ -131,10 +176,16 @@ function updateGameDisplay(gameInfo) {
         return;
     }
 
-    // Update game status
-    document.querySelector('.update').textContent = gameInfo.currentMove ?
-        `${gameInfo.currentMove.color.charAt(0).toUpperCase() + gameInfo.currentMove.color.slice(1)} move` :
-        'Waiting';
+    // Update game status and winner information
+    const updateElement = document.querySelector('.update');
+    if (gameInfo.status === 'finished') {
+        const winnerColor = gameInfo.winnerId === gameInfo.playerId ? gameInfo.playerColor : (gameInfo.playerColor === 'blue' ? 'red' : 'blue');
+        updateElement.textContent = `${winnerColor.charAt(0).toUpperCase() + winnerColor.slice(1)} wins!`;
+    } else {
+        updateElement.textContent = gameInfo.currentMove ?
+            `${gameInfo.currentMove.color.charAt(0).toUpperCase() + gameInfo.currentMove.color.slice(1)} move` :
+            'Waiting';
+    }
 
     // Update game ID
     document.querySelector('.gameid-num').textContent = `#${gameInfo.gameId}`;
@@ -151,9 +202,13 @@ function updateGameDisplay(gameInfo) {
 
     // Update invite code display
     const storedGameInfo = getGameInfo(gameInfo.gameId);
-    const inviteCode = storedGameInfo ? storedGameInfo.inviteCode : 'N/A';
-    document.querySelector('.gameid-code').textContent = `Invite Code: ${inviteCode}`;
-    document.querySelector('.gameid-code-container').style.display = 'block';
+    const inviteCodeContainer = document.querySelector('.gameid-code-container');
+    if (storedGameInfo && storedGameInfo.inviteCode) {
+        document.querySelector('.gameid-code').textContent = `Invite Code: ${storedGameInfo.inviteCode}`;
+        inviteCodeContainer.style.display = 'block';
+    } else {
+        inviteCodeContainer.style.display = 'none';
+    }
 
     // Update cards display
     if (gameInfo.playerPieces && gameInfo.opponentPieces) {
@@ -204,7 +259,8 @@ function storeGameInfo(data) {
         playerColor: data.player_color,
         status: data.status,
         timePerMove: data.available_games.find(g => g.game_id === data.game_id)?.time_per_move,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        winnerId: data.winner_id || null
     };
 
     // Store this specific game's data under its unique key
@@ -248,5 +304,322 @@ document.addEventListener('DOMContentLoaded', async () => {
                 updateGameDisplay(updatedInfo);
             }
         }, 5000); // Refresh every 5 seconds
+    }
+});
+
+let selectedPieceCell = null;
+let selectedCard = null;
+const moveDeltas = {
+    'Tiger': [{dx: 0, dy: 2}, {dx: 0, dy: -1}],
+    'Dragon': [{dx: -2, dy: 1}, {dx: 2, dy: 1}, {dx: -1, dy: -1}, {dx: 1, dy: -1}],
+    'Frog': [{dx: -2, dy: 0}, {dx: -1, dy: 1}, {dx: 1, dy: -1}],
+    'Rabbit': [{dx: 2, dy: 0}, {dx: 1, dy: 1}, {dx: -1, dy: -1}],
+    'Crab': [{dx: 0, dy: 1}, {dx: -2, dy: 0}, {dx: 2, dy: 0}],
+    'Elephant': [{dx: -1, dy: 1}, {dx: 1, dy: 1}, {dx: -1, dy: 0}, {dx: 1, dy: 0}],
+    'Goose': [{dx: -1, dy: 1}, {dx: -1, dy: 0}, {dx: 1, dy: 0}, {dx: 1, dy: -1}],
+    'Rooster': [{dx: 1, dy: 1}, {dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: -1, dy: -1}],
+    'Monkey': [{dx: -1, dy: 1}, {dx: 1, dy: 1}, {dx: -1, dy: -1}, {dx: 1, dy: -1}],
+    'Mantis': [{dx: -1, dy: 1}, {dx: 1, dy: 1}, {dx: 0, dy: -1}],
+    'Horse': [{dx: 0, dy: 1}, {dx: -1, dy: 0}, {dx: 0, dy: -1}],
+    'Ox': [{dx: 0, dy: 1}, {dx: 1, dy: 0}, {dx: 0, dy: -1}],
+    'Crane': [{dx: 0, dy: 1}, {dx: -1, dy: -1}, {dx: 1, dy: -1}],
+    'Boar': [{dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 1, dy: 0}],
+    'Eel': [{dx: -1, dy: 1}, {dx: -1, dy: 0}, {dx: 1, dy: -1}],
+    'Cobra': [{dx: 1, dy: 1}, {dx: -1, dy: 0}, {dx: 1, dy: -1}]
+};
+
+const cardIdMapping = {
+    'Tiger': 1,
+    'Dragon': 2,
+    'Frog': 3,
+    'Rabbit': 4,
+    'Crab': 5,
+    'Elephant': 6,
+    'Goose': 7,
+    'Rooster': 8,
+    'Monkey': 9,
+    'Mantis': 10,
+    'Horse': 11,
+    'Ox': 12,
+    'Crane': 13,
+    'Boar': 14,
+    'Eel': 15,
+    'Cobra': 16
+};
+
+// Function to make a move
+async function makeMove(fromCell, toCell, card) {
+    const gameId = getCurrentGameId();
+    const token = localStorage.getItem('token');
+
+    if (!gameId || !token) {
+        console.error('Missing game ID or token');
+        return;
+    }
+
+    const gameInfo = getGameInfo(gameId);
+    if (!gameInfo) {
+        console.error('Game info not found');
+        return;
+    }
+
+    const cardName = card.querySelector('img').alt;
+    const cardId = cardIdMapping[cardName];
+
+    if (!cardId) {
+        console.error('Invalid card name:', cardName);
+        return;
+    }
+
+    const moveData = {
+        token: token,
+        player_id: gameInfo.playerId,
+        from_x: parseInt(fromCell.dataset.col),
+        from_y: parseInt(fromCell.dataset.row),
+        to_x: parseInt(toCell.dataset.col),
+        to_y: parseInt(toCell.dataset.row),
+        card_id: cardId
+    };
+
+    // Debugging: Alert the move data
+    //alert(JSON.stringify(moveData, null, 2));
+
+    try {
+        const response = await fetch('https://se.ifmo.ru/~s341995/api/games/make_move', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(moveData)
+        });
+        async function makeMove(fromCell, toCell, card) {
+    const gameId = getCurrentGameId();
+    const token = localStorage.getItem('token');
+
+    if (!gameId || !token) {
+        console.error('Missing game ID or token');
+        return;
+    }
+
+    const gameInfo = getGameInfo(gameId);
+    if (!gameInfo) {
+        console.error('Game info not found');
+        return;
+    }
+
+    const cardName = card.querySelector('img').alt;
+    const cardId = cardIdMapping[cardName];
+
+    if (!cardId) {
+        console.error('Invalid card name:', cardName);
+        return;
+    }
+
+    const moveData = {
+        token: token,
+        player_id: gameInfo.playerId,
+        from_x: parseInt(fromCell.dataset.col),
+        from_y: parseInt(fromCell.dataset.row),
+        to_x: parseInt(toCell.dataset.col),
+        to_y: parseInt(toCell.dataset.row),
+        card_id: cardId
+    };
+
+    // Debugging: Alert the move data
+    //alert(JSON.stringify(moveData, null, 2));
+
+    try {
+        const response = await fetch('https://se.ifmo.ru/~s341995/api/games/make_move', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(moveData)
+        });
+        clearSelections();
+        const data = await response.json();
+        
+        if (data.status === 'ongoing') {
+            // Clear selections after successful move
+            clearSelections();
+            // Update game display
+            const updatedInfo2 = await fetchGameInfo(gameId, token);
+            if (updatedInfo2) {
+                updateGameDisplay(updatedInfo);
+            }
+            //updateGameDisplay(data);
+        } else {
+            console.error('Move failed:', data.message);
+            //alert('Failed to make move: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error making move:', error);
+        //alert('Error making move. Please try again.');
+    }
+}
+
+
+        const data = await response.json();
+        if (data.status === 'ongoing') {
+            // Clear selections after successful move
+            clearSelections();
+            // Update game display
+            //updateGameDisplay(data);
+        } else {
+            console.error('Move failed:', data.message);
+            //alert('Failed to make move: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error making move:', error);
+        //alert('Error making move. Please try again.');
+    }
+}
+
+function getCurrentGameId() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('id');
+}
+
+function showPossibleMoves(fromCell, card) {
+    // Clear any previously highlighted moves
+    clearPossibleMoves();
+
+    if (!fromCell || !card) return;
+
+    // Check if the selected cell has a piece
+    const piece = fromCell.querySelector('.piece');
+    if (!piece) {
+        console.log('No piece in selected cell');
+        return;
+    }
+
+    const fromRow = parseInt(fromCell.dataset.row);
+    const fromCol = parseInt(fromCell.dataset.col);
+    const cardName = card.querySelector('img').alt;
+    const gameInfo = getGameInfo(getCurrentGameId());
+
+    if (!moveDeltas[cardName] || !gameInfo) return;
+
+    const deltas = moveDeltas[cardName];
+    const yMultiplier = gameInfo.playerColor === 'red' ? 1 : -1;
+    const xMultiplier = gameInfo.playerColor === 'red' ? 1 : -1;
+
+    deltas.forEach(delta => {
+        const toRow = fromRow + (delta.dy * yMultiplier);
+        const toCol = fromCol + (delta.dx * xMultiplier);
+
+        // Check if the move is within board boundaries
+        if (toRow >= 0 && toRow < 5 && toCol >= 0 && toCol < 5) {
+            const targetCell = document.querySelector(
+                `.board-cell[data-row="${toRow}"][data-col="${toCol}"]`
+            );
+
+            if (targetCell) {
+                // Check if target cell has a piece of the same color
+                const targetPiece = targetCell.querySelector('.piece');
+                if (!targetPiece || !targetPiece.classList.contains(gameInfo.playerColor)) {
+                    targetCell.classList.add('possible-move');
+                }
+            }
+        }
+    });
+}
+
+function clearPossibleMoves() {
+    document.querySelectorAll('.board-cell.possible-move').forEach(cell => {
+        cell.classList.remove('possible-move');
+    });
+}
+
+function clearSelections() {
+    if (selectedPieceCell) {
+        selectedPieceCell.classList.remove('active');
+        selectedPieceCell = null;
+    }
+    if (selectedCard) {
+        selectedCard.classList.remove('selected');
+        selectedCard = null;
+    }
+    clearPossibleMoves();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const gameBoard = document.querySelector('.game-board');
+    const playerCardsContainer = document.querySelector('.cards-player');
+
+    if (gameBoard) {
+        gameBoard.addEventListener('click', (e) => {
+            const cell = e.target.closest('.board-cell');
+
+            if (!cell) return;
+
+            // If a card is selected, treat this as the destination cell
+            if (selectedCard) {
+                if (cell.classList.contains('possible-move')) {
+                    //alert('Making move from (' + selectedPieceCell.dataset.row + ',' + selectedPieceCell.dataset.col + ') to (' + cell.dataset.row + ',' + cell.dataset.col + ')');
+                    makeMove(selectedPieceCell, cell, selectedCard);
+                }
+                return;
+            }
+
+            // Remove highlight from previously selected cell
+            if (selectedPieceCell) {
+                selectedPieceCell.classList.remove('active');
+            }
+
+            // If clicking the same cell, deselect it
+            if (selectedPieceCell === cell) {
+                selectedPieceCell = null;
+                return;
+            }
+
+            // Select new cell
+            selectedPieceCell = cell;
+            cell.classList.add('active');
+        });
+    }
+
+    if (playerCardsContainer) {
+        playerCardsContainer.addEventListener('click', (e) => {
+            const cardElement = e.target.closest('.card');
+
+            if (!cardElement) return;
+
+            const gameInfo = getGameInfo(getCurrentGameId());
+            if (!gameInfo) {
+                console.error('Game info not found');
+                return;
+            }
+
+            // Check if the current move color matches the player's color
+            if (gameInfo.currentMoveColor !== gameInfo.playerColor) {
+                alert('It is not your turn to move.');
+                return;
+            }
+
+            if (!cardElement.classList.contains('active')) return;
+
+            // If no cell is selected, don't allow card selection
+            if (!selectedPieceCell) return;
+
+            // Remove selected class from previously selected card
+            if (selectedCard) {
+                selectedCard.classList.remove('selected');
+            }
+
+            // If clicking the same card, deselect it
+            if (selectedCard === cardElement) {
+                selectedCard = null;
+                return;
+            }
+
+            // Select new card
+            selectedCard = cardElement;
+            cardElement.classList.add('selected');
+
+            if (selectedPieceCell) {
+                showPossibleMoves(selectedPieceCell, selectedCard);
+            }
+        });
     }
 });
