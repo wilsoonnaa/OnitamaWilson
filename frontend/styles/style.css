@@ -1,7 +1,7 @@
 html, body {
     margin: 0;
     height: 100vh;
-    background-image: url(/frontend/assets/images/background-image.png);
+    background-image: url(../assets/images/background-image.png);
     background-repeat: no-repeat;
     background-size: fit;
 }
@@ -25,21 +25,21 @@ html, body {
 /*Fonts*/
 @font-face {
     font-family: 'RobotoMono';
-    src: url('/frontend/assets/fonts/roboto-mono/static/RobotoMono-Regular.ttf') format('truetype');
+    src: url('../assets/fonts/roboto-mono/static/RobotoMono-Regular.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'RobotoMono';
-    src: url('/frontend/assets/fonts/roboto-mono/static/RobotoMono-Light.ttf') format('truetype');
+    src: url('../frontend/assets/fonts/roboto-mono/static/RobotoMono-Light.ttf') format('truetype');
     font-weight: light;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'RobotoMono';
-    src: url('/frontend/assets/fonts/roboto-mono/static/RobotoMono-SemiBold.ttf') format('truetype');
+    src: url('../frontend/assets/fonts/roboto-mono/static/RobotoMono-SemiBold.ttf') format('truetype');
     font-weight: bold;
     font-style: normal;
 }
